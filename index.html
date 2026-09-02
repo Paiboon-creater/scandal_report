@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -127,7 +126,6 @@
         .btn-print { background: rgba(245, 166, 35, 0.1); color: var(--neon-yellow); border-color: var(--neon-yellow); }
         .btn-print:hover { background: var(--neon-yellow); color: #000; }
         
-        /* สไตล์สำหรับช่องเลือกเดือน */
         input[type="month"]::-webkit-calendar-picker-indicator {
             filter: invert(1); cursor: pointer;
         }
@@ -150,7 +148,6 @@
                     <option value="">-- กำลังโหลดข้อมูล --</option>
                 </select>
             </div>
-            <!-- เพิ่มช่องเลือกเดือน -->
             <div class="col-md-2">
                 <label class="form-label text-label mb-1" style="font-size: 0.8rem;">ประจำเดือน:</label>
                 <input type="month" id="input_month" class="form-select-neon form-control" onchange="searchOrderIfReady()">
@@ -200,7 +197,6 @@
     let rawData = { orders: [], workItems: [], steps: [], targets: [], daily: [], orderSteps: [] };
     let maps = { workIdToCode: {}, stepIdToName: {}, targetIdToStepId: {}, workIdToStepIds: {} };
     
-    // ตั้งค่า Mapping ชื่อขั้นตอนให้แสดงตรงตาม Excel
     const STEP_ABBR_MAP = {
         "ตัดเหรียญมือ": "ตัดเหรียญมือ", "ตัดเหรียญออโต": "ตัดเหรียญออโต", "ตัดมุม": "ตัดมุม", 
         "รีดใบ": "รีดใบ", "ตัดใบ": "ตัดใบ", "ตัดใบมือ": "ตัดใบมือ", "ตีตรา": "ตีตรา", "ตีลาย": "ตีลาย", "ตีลายมือ": "ตีลายมือ"
@@ -296,7 +292,6 @@
         let monthInput = document.getElementById('input_month');
         let targetYear, targetMonth;
 
-        // จัดการเรื่องเดือน (ใช้จากที่ผู้ใช้เลือก หรือ หาเดือนล่าสุดอัตโนมัติ)
         if (monthInput.value) {
             let [y, m] = monthInput.value.split('-');
             targetYear = parseInt(y);
@@ -304,8 +299,9 @@
         } else {
             let latestDateStr = null; 
             dailyForOrder.forEach(d => {
-                if(d.production_date) {
-                    let dIso = d.production_date.substring(0, 10);
+                // แก้ไขจาก production_date เป็น record_date ตาม Database
+                if(d.record_date) {
+                    let dIso = d.record_date.substring(0, 10);
                     if (!latestDateStr || dIso > latestDateStr) latestDateStr = dIso;
                 }
             });
@@ -320,7 +316,6 @@
 
         document.getElementById('lbl_report_month').innerText = `${MONTH_NAMES[targetMonth]} ${targetYear + 543}`;
 
-        // หาจำนวนวันในเดือนนั้น (เช่น 28, 30, 31)
         let daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate(); 
         let dateArray = Array.from({length: daysInMonth}, (_, i) => i + 1);
 
@@ -334,7 +329,6 @@
         const thead = document.getElementById('prodHead');
         const tbody = document.getElementById('prodBody');
         
-        // ส่วนหัวตาราง
         let headHtml = `<tr>
             <th class="col-step"></th>
             <th class="col-total">รวม</th>`;
@@ -354,16 +348,15 @@
             return;
         }
 
-        // หยอดตัวเลขลงตาราง
         sortedStepIds.forEach(stepId => {
             let stepName = getStepAbbr(maps.stepIdToName[stepId]);
-            let monthTotal = 0; // ยอดรวมเฉพาะเดือนนี้
+            let monthTotal = 0; 
             let dailySum = {}; 
             
             dailyForOrder.forEach(d => {
-                if (maps.targetIdToStepId[d.id_target] === stepId && d.production_date) {
-                    // หั่น String โดยตรง ป้องกันบั๊ก Timezone
-                    let [pY, pM, pD] = d.production_date.substring(0, 10).split('-');
+                // แก้ไขจาก production_date เป็น record_date ตาม Database
+                if (maps.targetIdToStepId[d.id_target] === stepId && d.record_date) {
+                    let [pY, pM, pD] = d.record_date.substring(0, 10).split('-');
                     
                     if (parseInt(pY) === targetYear && parseInt(pM) - 1 === targetMonth) {
                         let dayNum = parseInt(pD);
