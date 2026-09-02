@@ -45,72 +45,28 @@
             z-index: -1;
         }
 
-        /* ------------------------------------------
-           ส่วนตั้งค่าการพิมพ์ (Print CSS)
-        ------------------------------------------ */
         @media print {
             @page { 
-                size: A4 landscape; /* บังคับเป็น A4 แนวนอนอัตโนมัติ */
+                size: A4 landscape; 
                 margin: 10mm; 
             }
-            
-            body { 
-                background: white; 
-                color: black; 
-                padding: 0; 
-                margin: 0; 
-            }
-            
+            body { background: white; color: black; padding: 0; margin: 0; }
             body::before { display: none; }
             .no-print { display: none !important; }
-            
             .report-container {
-                width: 100% !important; 
-                height: auto !important; 
-                padding: 0 !important; 
-                margin: 0 !important;
-                border: none !important; 
-                background: white !important; 
-                color: black !important; 
-                box-shadow: none !important;
+                width: 100% !important; height: auto !important; padding: 0 !important; margin: 0 !important;
+                border: none !important; background: white !important; color: black !important; box-shadow: none !important;
             }
-            
-            /* ปลดล็อกการเลื่อนแนวนอน และซ่อน Scrollbar */
-            .table-responsive {
-                overflow: visible !important; 
-                max-height: none !important;
-            }
-            
+            .table-responsive { overflow: visible !important; max-height: none !important; }
             .prod-table {
-                width: 100% !important; 
-                min-width: 0 !important; 
-                border-collapse: collapse !important;
-                font-size: 0.75rem !important; /* ลดขนาดฟอนต์นิดหน่อยให้ลงกระดาษสวยๆ */
+                width: 100% !important; min-width: 0 !important; border-collapse: collapse !important;
+                font-size: 0.75rem !important; 
             }
-            
-            .prod-table th, .prod-table td { 
-                border: 1px solid #666 !important; /* เปลี่ยนสีกรอบเป็นสีดำ/เทาเข้ม */
-                color: black !important; 
-                padding: 4px 2px !important;
-            }
-            
-            .prod-table th { 
-                background-color: #f0f0f0 !important; 
-                -webkit-print-color-adjust: exact; 
-                color: black !important;
-            }
-            
-            /* ยกเลิกการตรึงคอลัมน์ (Sticky) ตอนพิมพ์ เพื่อป้องกันตารางพัง */
-            .col-step, .col-total, .prod-table th {
-                position: static !important;
-            }
-            
-            .text-neon-blue, .text-neon-yellow, .text-neon-green { 
-                color: black !important; 
-                font-weight: bold;
-            }
+            .prod-table th, .prod-table td { border: 1px solid #666 !important; color: black !important; padding: 4px 2px !important; }
+            .prod-table th { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; color: black !important; }
+            .col-step, .col-total, .prod-table th { position: static !important; }
+            .text-neon-blue, .text-neon-yellow, .text-neon-green { color: black !important; font-weight: bold; }
         }
-        /* ------------------------------------------ */
 
         .control-panel {
             background: var(--panel-bg); border: 1px solid var(--border-dim);
@@ -133,11 +89,7 @@
         .report-title { text-align: right; }
         .report-title h3 { color: var(--neon-yellow); margin-bottom: 2px; font-weight: bold; font-size: 1.2rem; }
 
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-            max-height: 65vh;
-        }
+        .table-responsive { width: 100%; overflow-x: auto; max-height: 65vh; }
 
         .prod-table {
             min-width: 100%; width: max-content; border-collapse: separate; border-spacing: 0;
@@ -181,15 +133,19 @@
         .btn-neon {
             background: #0d2b52; color: var(--text-main); border: 1px solid var(--border-dim);
             padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9rem;
+            text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
         }
         .btn-neon:hover { background: var(--border-dim); color: #fff; }
+        
         .btn-print { background: rgba(245, 166, 35, 0.1); color: var(--neon-yellow); border-color: var(--neon-yellow); }
         .btn-print:hover { background: var(--neon-yellow); color: #000; }
+        
+        .btn-home { background: rgba(0, 255, 136, 0.1); color: var(--neon-green); border-color: var(--neon-green); }
+        .btn-home:hover { background: var(--neon-green); color: #000; }
         
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
         .input-group-text-neon { background: var(--input-bg); color: var(--text-muted); border: 1px solid var(--border-dim); }
 
-        /* สไตล์สำหรับ Smart Dropdown */
         .smart-dropdown-menu {
             position: absolute; top: 100%; left: 0; right: 0;
             background: var(--input-bg); border: 1px solid var(--neon-blue);
@@ -209,14 +165,13 @@
 
     <div class="control-panel no-print">
         <div class="row align-items-end">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <label class="form-label text-label mb-1" style="font-size: 0.8rem;">ระบุหรือค้นหาเลขที่ใบสั่ง (Order No):</label>
                 <div class="input-group position-relative">
                     <input type="text" id="input_order_no" class="form-select-neon form-control" 
                            placeholder="พิมพ์เลขใบสั่ง เช่น 139..." autocomplete="off"
                            onkeyup="filterSmartDropdown()" onfocus="filterSmartDropdown()" onkeydown="handleEnter(event)">
                     <button class="btn btn-neon" onclick="searchOrder()">ค้นหา</button>
-                    <!-- กล่องแสดงรายการค้นหาอัจฉริยะ -->
                     <div id="smart_dropdown" class="smart-dropdown-menu"></div>
                 </div>
             </div>
@@ -228,11 +183,14 @@
                     <input type="date" id="input_end_date" class="form-select-neon form-control" onchange="searchOrderIfReady()">
                 </div>
             </div>
-            <div class="col-md-2 text-end">
-                <div id="loadingStatus" class="d-inline-block me-2 text-neon-blue" style="display: none !important;">
+            <div class="col-md-3 text-end d-flex justify-content-end align-items-end gap-2">
+                <div id="loadingStatus" class="d-inline-block text-neon-blue" style="display: none !important;">
                     <i class="fa-solid fa-spinner fa-spin"></i>
                 </div>
-                <button class="btn btn-neon btn-print w-100" onclick="window.print()">
+                <a href="https://paiboon-creater.github.io/Data_Information_Jaguar_productions/" class="btn btn-neon btn-home">
+                    <i class="fa-solid fa-house"></i> Home
+                </a>
+                <button class="btn btn-neon btn-print" onclick="window.print()">
                     <i class="fa-solid fa-print"></i> พิมพ์
                 </button>
             </div>
