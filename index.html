@@ -1,1 +1,395 @@
 
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JAGUAR DAILY PRODUCTION REPORT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            --bg-dark: #020a16;
+            --panel-bg: rgba(7, 21, 43, 0.95);
+            --border-neon: #0088ff;
+            --border-dim: #174276;
+            --text-main: #e6f0ff;
+            --text-label: #8ca8cc;
+            --text-muted: #5c7c9e;
+            --neon-blue: #00aaff;
+            --neon-yellow: #f5a623;
+            --neon-green: #00ff88;
+            --input-bg: #0a1f3d;
+            --input-text: #ffffff;
+            --table-bg: #051428;
+            --table-header-bg: #031022;
+            --table-hover-bg: #0c2b54;
+            --cell-width: 26px; 
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(2, 10, 22, 0.95), rgba(5, 15, 30, 0.9));
+            z-index: -1;
+        }
+
+        @media print {
+            body { background: white; color: black; padding: 0; margin: 0; }
+            body::before { display: none; }
+            .no-print { display: none !important; }
+            .a4-container {
+                width: 297mm; height: 209mm; padding: 5mm; margin: 0 auto;
+                border: none !important; background: white !important; color: black !important; box-shadow: none !important;
+            }
+            .table-bordered th, .table-bordered td { border-color: #999 !important; color: black !important; }
+            th { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; }
+            .text-neon-blue, .text-neon-yellow, .text-neon-green { color: black !important; }
+        }
+
+        .control-panel {
+            background: var(--panel-bg); border: 1px solid var(--border-dim);
+            border-radius: 6px; padding: 15px; margin-bottom: 20px;
+        }
+
+        .a4-container {
+            width: 297mm; min-height: 210mm; background: var(--table-bg);
+            border: 2px solid var(--border-neon); margin: 0 auto; padding: 15px;
+            box-shadow: 0 0 15px rgba(0, 136, 255, 0.2); position: relative;
+        }
+
+        .report-header {
+            display: flex; justify-content: space-between;
+            border-bottom: 2px solid var(--border-dim); padding-bottom: 10px; margin-bottom: 15px;
+        }
+
+        .report-info-box { font-size: 0.85rem; line-height: 1.5; }
+        .report-info-box span { color: var(--neon-blue); font-weight: bold; }
+        .report-title { text-align: right; }
+        .report-title h3 { color: var(--neon-yellow); margin-bottom: 2px; font-weight: bold; font-size: 1.2rem; }
+
+        .prod-table {
+            width: 100%; border-collapse: separate; border-spacing: 0;
+            border: 1px solid var(--border-dim); font-size: 0.75rem; 
+        }
+
+        .prod-table th, .prod-table td {
+            border-right: 1px solid var(--border-dim); border-bottom: 1px solid var(--border-dim);
+            padding: 4px 2px; text-align: center; vertical-align: middle; height: 28px;
+        }
+
+        .prod-table th { background-color: var(--table-header-bg); color: var(--neon-blue); font-weight: bold; position: sticky; top: 0; z-index: 5; }
+        .prod-table tr:hover td { background-color: var(--table-hover-bg); }
+
+        .col-step { 
+            position: sticky; left: 0; background-color: var(--table-header-bg); z-index: 10; 
+            width: 90px; min-width: 90px; max-width: 90px; text-align: left !important; padding-left: 8px !important;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main);
+        }
+        
+        .col-total { 
+            position: sticky; left: 90px; background-color: #041224; z-index: 10;
+            width: 65px; min-width: 65px; font-weight: bold; color: var(--neon-green);
+        }
+
+        .prod-table thead .col-step, .prod-table thead .col-total { z-index: 15; background-color: #020c18; color: var(--neon-yellow); }
+
+        .date-col {
+            width: var(--cell-width); min-width: var(--cell-width); max-width: var(--cell-width);
+            color: var(--neon-blue); font-size: 0.75rem; 
+        }
+
+        .val-cell { font-family: 'Courier New', monospace; font-weight: bold; font-size: 0.75rem; }
+        .val-zero { color: #1a2a3a; font-weight: normal; } 
+
+        .form-select-neon {
+            background-color: var(--input-bg); border: 1px solid var(--border-dim); color: var(--input-text);
+            padding: 6px 10px; border-radius: 4px; outline: none; font-size: 0.85rem;
+        }
+        .form-select-neon:focus { border-color: var(--neon-blue); }
+        .btn-neon {
+            background: #0d2b52; color: var(--text-main); border: 1px solid var(--border-dim);
+            padding: 6px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;
+        }
+        .btn-neon:hover { background: var(--border-dim); color: #fff; }
+        .btn-print { background: rgba(245, 166, 35, 0.1); color: var(--neon-yellow); border-color: var(--neon-yellow); }
+        .btn-print:hover { background: var(--neon-yellow); color: #000; }
+        
+        /* สไตล์สำหรับช่องเลือกเดือน */
+        input[type="month"]::-webkit-calendar-picker-indicator {
+            filter: invert(1); cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="control-panel no-print">
+        <div class="row align-items-end">
+            <div class="col-md-3">
+                <label class="form-label text-label mb-1" style="font-size: 0.8rem;">ระบุเลขที่ใบสั่ง (Order No):</label>
+                <div class="input-group">
+                    <input type="text" id="input_order_no" class="form-select-neon form-control" placeholder="เช่น PO-001" onkeypress="handleEnter(event)">
+                    <button class="btn btn-neon" onclick="searchOrder()">ค้นหา</button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-label mb-1" style="font-size: 0.8rem;">หรือเลือกจากรายการ:</label>
+                <select id="select_order" class="form-select-neon form-select" onchange="selectOrderFromDropdown()">
+                    <option value="">-- กำลังโหลดข้อมูล --</option>
+                </select>
+            </div>
+            <!-- เพิ่มช่องเลือกเดือน -->
+            <div class="col-md-2">
+                <label class="form-label text-label mb-1" style="font-size: 0.8rem;">ประจำเดือน:</label>
+                <input type="month" id="input_month" class="form-select-neon form-control" onchange="searchOrderIfReady()">
+            </div>
+            <div class="col-md-4 text-end">
+                <div id="loadingStatus" class="d-inline-block me-3 text-neon-blue" style="display: none !important;">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                </div>
+                <button class="btn btn-neon btn-print" onclick="window.print()">
+                    <i class="fa-solid fa-print"></i> พิมพ์ (A4)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="a4-container" id="reportArea" style="display: none;">
+        <div class="report-header">
+            <div class="report-info-box">
+                <div style="font-size: 1.1rem; margin-bottom: 2px;">เลขที่ใบสั่งผลิต: <span id="lbl_order_no" style="font-size: 1.1rem;">-</span></div>
+                <div>รหัสชิ้นงาน: <span id="lbl_work_code">-</span></div>
+                <div>ยอดสั่งผลิต (Target): <span id="lbl_target">-</span> ชิ้น</div>
+                <div>ประจำเดือน: <span id="lbl_report_month" style="color: var(--neon-yellow);">-</span></div>
+            </div>
+            <div class="report-title">
+                <h3>DAILY PRODUCTION REPORT</h3>
+                <div style="color: var(--text-muted); font-size: 0.75rem;">เลขที่ PO: <span id="lbl_po_no" style="color: var(--text-main);"></span></div>
+                <div style="color: var(--text-muted); font-size: 0.75rem;">พิมพ์เมื่อ: <span id="lbl_print_date"></span></div>
+            </div>
+        </div>
+
+        <div style="overflow: hidden;">
+            <table class="prod-table" id="prodTable">
+                <thead id="prodHead"></thead>
+                <tbody id="prodBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+<script>
+    const SUPABASE_URL = "https://siiiifesdjuunwmwozfb.supabase.co/rest/v1";
+    const SUPABASE_KEY = "sb_publishable_ohToE8Z_Fzo87uBtzdPDIg_cqHCi3HT";
+    const headers = { 
+        "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, 
+        "Content-Type": "application/json", "Prefer": "return=minimal" 
+    };
+
+    let rawData = { orders: [], workItems: [], steps: [], targets: [], daily: [], orderSteps: [] };
+    let maps = { workIdToCode: {}, stepIdToName: {}, targetIdToStepId: {}, workIdToStepIds: {} };
+    
+    // ตั้งค่า Mapping ชื่อขั้นตอนให้แสดงตรงตาม Excel
+    const STEP_ABBR_MAP = {
+        "ตัดเหรียญมือ": "ตัดเหรียญมือ", "ตัดเหรียญออโต": "ตัดเหรียญออโต", "ตัดมุม": "ตัดมุม", 
+        "รีดใบ": "รีดใบ", "ตัดใบ": "ตัดใบ", "ตัดใบมือ": "ตัดใบมือ", "ตีตรา": "ตีตรา", "ตีลาย": "ตีลาย", "ตีลายมือ": "ตีลายมือ"
+    };
+
+    function getStepAbbr(name) {
+        if(!name) return "ไม่ระบุ";
+        return STEP_ABBR_MAP[name.trim()] || name.trim();
+    }
+
+    const MONTH_NAMES = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+
+    window.onload = async function() {
+        showLoading(true);
+        await fetchAllData();
+        populateOrderDropdown();
+        
+        const today = new Date();
+        document.getElementById('lbl_print_date').innerText = `${today.getDate()}/${today.getMonth()+1}/${today.getFullYear()} ${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
+        showLoading(false);
+    };
+
+    async function fetchAllData() {
+        try {
+            const endpoints = [
+                `${SUPABASE_URL}/orders?select=*`,
+                `${SUPABASE_URL}/work_items?select=*`,
+                `${SUPABASE_URL}/production_steps?select=*`,
+                `${SUPABASE_URL}/targets?select=*`,
+                `${SUPABASE_URL}/daily_production?select=*`,
+                `${SUPABASE_URL}/order_steps?select=*`
+            ];
+            const responses = await Promise.all(endpoints.map(url => fetch(url, { headers })));
+            const data = await Promise.all(responses.map(res => res.json()));
+            rawData = { orders: data[0], workItems: data[1], steps: data[2], targets: data[3], daily: data[4], orderSteps: data[5] || [] };
+            buildMaps();
+        } catch (error) { console.error("Error:", error); }
+    }
+
+    function buildMaps() {
+        maps.workIdToCode = {}; rawData.workItems.forEach(w => maps.workIdToCode[w.id_work] = w.work_code);
+        maps.stepIdToName = {}; rawData.steps.forEach(s => maps.stepIdToName[s.id_step] = s.step_name);
+        maps.targetIdToStepId = {}; maps.workIdToStepIds = {};
+        rawData.targets.forEach(t => {
+            maps.targetIdToStepId[t.id_target] = t.id_step;
+            if(!maps.workIdToStepIds[t.id_work]) maps.workIdToStepIds[t.id_work] = new Set();
+            maps.workIdToStepIds[t.id_work].add(t.id_step);
+        });
+    }
+
+    function populateOrderDropdown() {
+        const select = document.getElementById('select_order');
+        let options = '<option value="">-- เลือกใบสั่งผลิต --</option>';
+        const validOrders = rawData.orders.filter(o => o.order_no && String(o.order_no).trim() !== "")
+                                          .sort((a,b) => String(a.order_no).localeCompare(String(b.order_no), 'th', {numeric:true}));
+        validOrders.forEach(o => { options += `<option value="${String(o.order_no).trim()}">${String(o.order_no).trim()}</option>`; });
+        select.innerHTML = options;
+    }
+
+    function handleEnter(e) { if (e.key === 'Enter') searchOrder(); }
+    function selectOrderFromDropdown() {
+        const val = document.getElementById('select_order').value;
+        document.getElementById('input_order_no').value = val;
+        if(val) searchOrder();
+    }
+    
+    function searchOrderIfReady() {
+        if (document.getElementById('input_order_no').value.trim() !== "") {
+            searchOrder();
+        }
+    }
+
+    function showLoading(show) { document.getElementById('loadingStatus').style.setProperty('display', show ? 'inline-block' : 'none', 'important'); }
+
+    function searchOrder() {
+        const searchVal = document.getElementById('input_order_no').value.trim();
+        if (!searchVal) return;
+        showLoading(true);
+        
+        const orderData = rawData.orders.find(o => String(o.order_no).trim().toLowerCase() === searchVal.toLowerCase());
+        if (!orderData) {
+            showLoading(false); alert("ไม่พบเลขที่ใบสั่ง: " + searchVal);
+            document.getElementById('reportArea').style.display = 'none'; return;
+        }
+
+        document.getElementById('lbl_order_no').innerText = orderData.order_no;
+        document.getElementById('lbl_work_code').innerText = maps.workIdToCode[orderData.id_work] || 'ไม่ระบุ';
+        document.getElementById('lbl_po_no').innerText = orderData.po_no || '-';
+        document.getElementById('lbl_target').innerText = Number(orderData.quantity || 0).toLocaleString();
+
+        const dailyForOrder = rawData.daily.filter(d => d.id_order === orderData.id_order);
+        
+        let monthInput = document.getElementById('input_month');
+        let targetYear, targetMonth;
+
+        // จัดการเรื่องเดือน (ใช้จากที่ผู้ใช้เลือก หรือ หาเดือนล่าสุดอัตโนมัติ)
+        if (monthInput.value) {
+            let [y, m] = monthInput.value.split('-');
+            targetYear = parseInt(y);
+            targetMonth = parseInt(m) - 1;
+        } else {
+            let latestDateStr = null; 
+            dailyForOrder.forEach(d => {
+                if(d.production_date) {
+                    let dIso = d.production_date.substring(0, 10);
+                    if (!latestDateStr || dIso > latestDateStr) latestDateStr = dIso;
+                }
+            });
+            if (!latestDateStr) latestDateStr = orderData.start_date || new Date().toISOString().substring(0, 10);
+            
+            let [y, m, d] = latestDateStr.split('-');
+            targetYear = parseInt(y);
+            targetMonth = parseInt(m) - 1;
+            
+            monthInput.value = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`;
+        }
+
+        document.getElementById('lbl_report_month').innerText = `${MONTH_NAMES[targetMonth]} ${targetYear + 543}`;
+
+        // หาจำนวนวันในเดือนนั้น (เช่น 28, 30, 31)
+        let daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate(); 
+        let dateArray = Array.from({length: daysInMonth}, (_, i) => i + 1);
+
+        buildTable(orderData, dateArray, dailyForOrder, targetMonth, targetYear);
+        
+        document.getElementById('reportArea').style.display = 'block';
+        showLoading(false);
+    }
+
+    function buildTable(orderData, dateArray, dailyForOrder, targetMonth, targetYear) {
+        const thead = document.getElementById('prodHead');
+        const tbody = document.getElementById('prodBody');
+        
+        // ส่วนหัวตาราง
+        let headHtml = `<tr>
+            <th class="col-step"></th>
+            <th class="col-total">รวม</th>`;
+            
+        dateArray.forEach(dayNum => {
+            headHtml += `<th class="date-col">${dayNum}</th>`;
+        });
+        headHtml += `</tr>`;
+        thead.innerHTML = headHtml;
+
+        let bodyHtml = '';
+        let stepIds = maps.workIdToStepIds[orderData.id_work] || new Set();
+        let sortedStepIds = Array.from(stepIds).sort(); 
+
+        if (sortedStepIds.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="${2 + dateArray.length}">ไม่พบข้อมูลขั้นตอนของรหัสชิ้นงานนี้</td></tr>`;
+            return;
+        }
+
+        // หยอดตัวเลขลงตาราง
+        sortedStepIds.forEach(stepId => {
+            let stepName = getStepAbbr(maps.stepIdToName[stepId]);
+            let monthTotal = 0; // ยอดรวมเฉพาะเดือนนี้
+            let dailySum = {}; 
+            
+            dailyForOrder.forEach(d => {
+                if (maps.targetIdToStepId[d.id_target] === stepId && d.production_date) {
+                    // หั่น String โดยตรง ป้องกันบั๊ก Timezone
+                    let [pY, pM, pD] = d.production_date.substring(0, 10).split('-');
+                    
+                    if (parseInt(pY) === targetYear && parseInt(pM) - 1 === targetMonth) {
+                        let dayNum = parseInt(pD);
+                        let qty = d.produced_amount || 0;
+                        monthTotal += qty;
+                        dailySum[dayNum] = (dailySum[dayNum] || 0) + qty;
+                    }
+                }
+            });
+
+            bodyHtml += `<tr>
+                <td class="col-step">${stepName}</td>
+                <td class="col-total val-cell">${monthTotal > 0 ? Number(monthTotal).toLocaleString() : ''}</td>`;
+                
+            dateArray.forEach(dayNum => {
+                let qty = dailySum[dayNum] || 0;
+                let cellClass = qty > 0 ? 'val-cell text-neon-blue' : 'val-cell val-zero';
+                let displayVal = qty > 0 ? Number(qty).toLocaleString() : ''; 
+                bodyHtml += `<td class="${cellClass}">${displayVal}</td>`;
+            });
+            bodyHtml += `</tr>`;
+        });
+
+        tbody.innerHTML = bodyHtml;
+    }
+</script>
+
+</body>
+</html>
