@@ -25,7 +25,7 @@
             --table-bg: #051428;
             --table-header-bg: #031022;
             --table-hover-bg: #0c2b54;
-            --cell-width: 35px; /* ปรับให้กว้างขึ้นเล็กน้อยเพื่อรองรับตัวเลข */
+            --cell-width: 35px;
         }
 
         body {
@@ -45,25 +45,78 @@
             z-index: -1;
         }
 
+        /* ------------------------------------------
+           ส่วนตั้งค่าการพิมพ์ (Print CSS)
+        ------------------------------------------ */
         @media print {
-            body { background: white; color: black; padding: 0; margin: 0; }
+            @page { 
+                size: A4 landscape; /* บังคับเป็น A4 แนวนอนอัตโนมัติ */
+                margin: 10mm; 
+            }
+            
+            body { 
+                background: white; 
+                color: black; 
+                padding: 0; 
+                margin: 0; 
+            }
+            
             body::before { display: none; }
             .no-print { display: none !important; }
+            
             .report-container {
-                width: 297mm; height: 209mm; padding: 5mm; margin: 0 auto;
-                border: none !important; background: white !important; color: black !important; box-shadow: none !important;
+                width: 100% !important; 
+                height: auto !important; 
+                padding: 0 !important; 
+                margin: 0 !important;
+                border: none !important; 
+                background: white !important; 
+                color: black !important; 
+                box-shadow: none !important;
             }
-            .table-bordered th, .table-bordered td { border-color: #999 !important; color: black !important; }
-            th { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; }
-            .text-neon-blue, .text-neon-yellow, .text-neon-green { color: black !important; }
+            
+            /* ปลดล็อกการเลื่อนแนวนอน และซ่อน Scrollbar */
+            .table-responsive {
+                overflow: visible !important; 
+                max-height: none !important;
+            }
+            
+            .prod-table {
+                width: 100% !important; 
+                min-width: 0 !important; 
+                border-collapse: collapse !important;
+                font-size: 0.75rem !important; /* ลดขนาดฟอนต์นิดหน่อยให้ลงกระดาษสวยๆ */
+            }
+            
+            .prod-table th, .prod-table td { 
+                border: 1px solid #666 !important; /* เปลี่ยนสีกรอบเป็นสีดำ/เทาเข้ม */
+                color: black !important; 
+                padding: 4px 2px !important;
+            }
+            
+            .prod-table th { 
+                background-color: #f0f0f0 !important; 
+                -webkit-print-color-adjust: exact; 
+                color: black !important;
+            }
+            
+            /* ยกเลิกการตรึงคอลัมน์ (Sticky) ตอนพิมพ์ เพื่อป้องกันตารางพัง */
+            .col-step, .col-total, .prod-table th {
+                position: static !important;
+            }
+            
+            .text-neon-blue, .text-neon-yellow, .text-neon-green { 
+                color: black !important; 
+                font-weight: bold;
+            }
         }
+        /* ------------------------------------------ */
 
         .control-panel {
             background: var(--panel-bg); border: 1px solid var(--border-dim);
             border-radius: 6px; padding: 15px; margin-bottom: 15px;
         }
 
-        /* เปลี่ยนเป็นแบบขยายเต็มหน้าจอ */
         .report-container {
             width: 100%; min-height: 500px; background: var(--table-bg);
             border: 2px solid var(--border-neon); padding: 15px;
@@ -83,7 +136,7 @@
         .table-responsive {
             width: 100%;
             overflow-x: auto;
-            max-height: 65vh; /* ล็อกความสูงเพื่อล็อกหัวตารางและแถบซ้าย */
+            max-height: 65vh;
         }
 
         .prod-table {
@@ -122,41 +175,50 @@
 
         .form-select-neon {
             background-color: var(--input-bg); border: 1px solid var(--border-dim); color: var(--input-text);
-            padding: 6px 10px; border-radius: 4px; outline: none; font-size: 0.85rem;
+            padding: 8px 12px; border-radius: 4px; outline: none; font-size: 0.9rem;
         }
-        .form-select-neon:focus { border-color: var(--neon-blue); }
+        .form-select-neon:focus { border-color: var(--neon-blue); box-shadow: 0 0 5px rgba(0, 170, 255, 0.4); }
         .btn-neon {
             background: #0d2b52; color: var(--text-main); border: 1px solid var(--border-dim);
-            padding: 6px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;
+            padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9rem;
         }
         .btn-neon:hover { background: var(--border-dim); color: #fff; }
         .btn-print { background: rgba(245, 166, 35, 0.1); color: var(--neon-yellow); border-color: var(--neon-yellow); }
         .btn-print:hover { background: var(--neon-yellow); color: #000; }
         
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(1); cursor: pointer;
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+        .input-group-text-neon { background: var(--input-bg); color: var(--text-muted); border: 1px solid var(--border-dim); }
+
+        /* สไตล์สำหรับ Smart Dropdown */
+        .smart-dropdown-menu {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: var(--input-bg); border: 1px solid var(--neon-blue);
+            border-top: none; z-index: 1000; max-height: 250px; overflow-y: auto;
+            display: none; border-radius: 0 0 6px 6px; box-shadow: 0 4px 15px rgba(0, 170, 255, 0.2);
         }
-        .input-group-text-neon {
-            background: var(--input-bg); color: var(--text-muted); border: 1px solid var(--border-dim);
+        .smart-dropdown-item {
+            padding: 10px 12px; color: var(--text-main); cursor: pointer;
+            border-bottom: 1px solid rgba(23, 66, 118, 0.5); font-size: 0.85rem;
         }
+        .smart-dropdown-item:hover { background: var(--table-hover-bg); color: var(--neon-yellow); }
+        .smart-dropdown-item:last-child { border-bottom: none; }
+        .highlight-match { color: var(--neon-green); font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="control-panel no-print">
         <div class="row align-items-end">
-            <div class="col-md-3">
-                <label class="form-label text-label mb-1" style="font-size: 0.8rem;">ระบุเลขที่ใบสั่ง (Order No):</label>
-                <div class="input-group">
-                    <input type="text" id="input_order_no" class="form-select-neon form-control" placeholder="เช่น PO-001" onkeypress="handleEnter(event)">
+            <div class="col-md-5">
+                <label class="form-label text-label mb-1" style="font-size: 0.8rem;">ระบุหรือค้นหาเลขที่ใบสั่ง (Order No):</label>
+                <div class="input-group position-relative">
+                    <input type="text" id="input_order_no" class="form-select-neon form-control" 
+                           placeholder="พิมพ์เลขใบสั่ง เช่น 139..." autocomplete="off"
+                           onkeyup="filterSmartDropdown()" onfocus="filterSmartDropdown()" onkeydown="handleEnter(event)">
                     <button class="btn btn-neon" onclick="searchOrder()">ค้นหา</button>
+                    <!-- กล่องแสดงรายการค้นหาอัจฉริยะ -->
+                    <div id="smart_dropdown" class="smart-dropdown-menu"></div>
                 </div>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label text-label mb-1" style="font-size: 0.8rem;">หรือเลือกจากรายการ:</label>
-                <select id="select_order" class="form-select-neon form-select" onchange="selectOrderFromDropdown()">
-                    <option value="">-- โหลดข้อมูล --</option>
-                </select>
             </div>
             <div class="col-md-5">
                 <label class="form-label text-label mb-1" style="font-size: 0.8rem;">เลือกช่วงวันที่แสดงผล:</label>
@@ -210,6 +272,7 @@
 
     let rawData = { orders: [], workItems: [], steps: [], targets: [], daily: [], orderSteps: [] };
     let maps = { workIdToCode: {}, stepIdToName: {}, targetIdToStepId: {}, workIdToStepIds: {} };
+    let allOrderNumbers = [];
     
     const STEP_ABBR_MAP = {
         "ตัดเหรียญมือ": "ตัดเหรียญมือ", "ตัดเหรียญออโต": "ตัดเหรียญออโต", "ตัดมุม": "ตัดมุม", 
@@ -226,7 +289,7 @@
     window.onload = async function() {
         showLoading(true);
         await fetchAllData();
-        populateOrderDropdown();
+        setupOrderList(); 
         
         const today = new Date();
         document.getElementById('lbl_print_date').innerText = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()} ${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
@@ -261,20 +324,56 @@
         });
     }
 
-    function populateOrderDropdown() {
-        const select = document.getElementById('select_order');
-        let options = '<option value="">-- เลือกใบสั่งผลิต --</option>';
+    function setupOrderList() {
         const validOrders = rawData.orders.filter(o => o.order_no && String(o.order_no).trim() !== "")
                                           .sort((a,b) => String(a.order_no).localeCompare(String(b.order_no), 'th', {numeric:true}));
-        validOrders.forEach(o => { options += `<option value="${String(o.order_no).trim()}">${String(o.order_no).trim()}</option>`; });
-        select.innerHTML = options;
+        allOrderNumbers = validOrders.map(o => String(o.order_no).trim());
     }
 
-    function handleEnter(e) { if (e.key === 'Enter') searchOrder(); }
-    function selectOrderFromDropdown() {
-        const val = document.getElementById('select_order').value;
-        document.getElementById('input_order_no').value = val;
-        if(val) searchOrder();
+    function filterSmartDropdown() {
+        const input = document.getElementById('input_order_no');
+        const dropdown = document.getElementById('smart_dropdown');
+        const filterText = input.value.toLowerCase().trim();
+        
+        dropdown.innerHTML = '';
+        const matchedOrders = allOrderNumbers.filter(order => order.toLowerCase().includes(filterText));
+        
+        if (matchedOrders.length === 0) {
+            dropdown.innerHTML = `<div class="smart-dropdown-item" style="color:var(--text-muted); cursor:default;">ไม่พบใบสั่งที่ค้นหา</div>`;
+        } else {
+            matchedOrders.slice(0, 50).forEach(order => {
+                let displayHtml = order;
+                if (filterText !== "") {
+                    const regex = new RegExp(`(${filterText})`, "gi");
+                    displayHtml = order.replace(regex, `<span class="highlight-match">$1</span>`);
+                }
+                dropdown.innerHTML += `<div class="smart-dropdown-item" onclick="selectSmartOrder('${order}')">${displayHtml}</div>`;
+            });
+        }
+        dropdown.style.display = 'block';
+    }
+
+    function selectSmartOrder(orderNo) {
+        const input = document.getElementById('input_order_no');
+        const dropdown = document.getElementById('smart_dropdown');
+        input.value = orderNo;
+        dropdown.style.display = 'none';
+        searchOrder(); 
+    }
+
+    document.addEventListener('click', function(event) {
+        const input = document.getElementById('input_order_no');
+        const dropdown = document.getElementById('smart_dropdown');
+        if (event.target !== input && event.target !== dropdown && !dropdown.contains(event.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    function handleEnter(e) { 
+        if (e.key === 'Enter') {
+            document.getElementById('smart_dropdown').style.display = 'none';
+            searchOrder(); 
+        }
     }
     
     function searchOrderIfReady() {
@@ -293,6 +392,8 @@
     function searchOrder() {
         const searchVal = document.getElementById('input_order_no').value.trim();
         if (!searchVal) return;
+        
+        document.getElementById('smart_dropdown').style.display = 'none';
         showLoading(true);
         
         const orderData = rawData.orders.find(o => String(o.order_no).trim().toLowerCase() === searchVal.toLowerCase());
@@ -314,7 +415,6 @@
         let startStr = startDateInput.value;
         let endStr = endDateInput.value;
 
-        // ถ้ายูสเซอร์ยังไม่เลือกวันที่ จะคำนวณหาวันที่ผลิตวันแรกและวันสุดท้ายให้โดยอัตโนมัติ
         if (!startStr || !endStr) {
             let minDateStr = null;
             let maxDateStr = null; 
@@ -346,7 +446,6 @@
 
         document.getElementById('lbl_report_date').innerText = `${formatDateThai(startStr)} - ${formatDateThai(endStr)}`;
 
-        // สร้าง Array ของวันที่ตั้งแต่เริ่มต้นจนถึงสิ้นสุด
         let dateArray = [];
         let curr = new Date(startStr);
         let end = new Date(endStr);
@@ -373,7 +472,6 @@
             
         dateArray.forEach(dStr => {
             let parts = dStr.split('-');
-            // แสดงเลขวันที่ และตัวย่อเดือนด้านล่าง ในกรณีที่ดูข้ามเดือน
             headHtml += `<th class="date-col">${parseInt(parts[2])}<br><span style="font-size:0.6rem; color:var(--text-muted);">${MONTH_ABBR[parseInt(parts[1])-1]}</span></th>`;
         });
         headHtml += `</tr>`;
@@ -390,16 +488,17 @@
 
         sortedStepIds.forEach(stepId => {
             let stepName = getStepAbbr(maps.stepIdToName[stepId]);
-            let rangeTotal = 0; 
+            let grandTotal = 0; 
             let dailySum = {}; 
             
             dailyForOrder.forEach(d => {
                 if (maps.targetIdToStepId[d.id_target] === stepId && d.record_date) {
                     let dKey = d.record_date.substring(0, 10);
+                    let qty = d.produced_amount || 0;
+                    
+                    grandTotal += qty;
                     
                     if (dateArray.includes(dKey)) {
-                        let qty = d.produced_amount || 0;
-                        rangeTotal += qty;
                         dailySum[dKey] = (dailySum[dKey] || 0) + qty;
                     }
                 }
@@ -407,7 +506,7 @@
 
             bodyHtml += `<tr>
                 <td class="col-step">${stepName}</td>
-                <td class="col-total val-cell">${rangeTotal > 0 ? Number(rangeTotal).toLocaleString() : ''}</td>`;
+                <td class="col-total val-cell">${grandTotal > 0 ? Number(grandTotal).toLocaleString() : ''}</td>`;
                 
             dateArray.forEach(dKey => {
                 let qty = dailySum[dKey] || 0;
