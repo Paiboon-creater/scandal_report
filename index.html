@@ -64,7 +64,7 @@
             }
             .prod-table th, .prod-table td { border: 1px solid #666 !important; color: black !important; padding: 4px 2px !important; }
             .prod-table th { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; color: black !important; }
-            .col-step, .col-total, .prod-table th { position: static !important; }
+            .col-step, .col-total, .col-balance, .prod-table th { position: static !important; }
             .text-neon-blue, .text-neon-yellow, .text-neon-green { color: black !important; font-weight: bold; }
         }
 
@@ -112,10 +112,16 @@
         
         .col-total { 
             position: sticky; left: 120px; background-color: #041224; z-index: 10;
-            width: 80px; min-width: 80px; font-weight: bold; color: var(--neon-green);
+            width: 70px; min-width: 70px; font-weight: bold; color: var(--neon-green);
         }
 
-        .prod-table thead .col-step, .prod-table thead .col-total { z-index: 15; background-color: #020c18; color: var(--neon-yellow); }
+        /* เพิ่มคลาสสำหรับคอลัมน์คงเหลือ */
+        .col-balance { 
+            position: sticky; left: 190px; background-color: #041224; z-index: 10;
+            width: 70px; min-width: 70px; font-weight: bold; color: var(--neon-yellow);
+        }
+
+        .prod-table thead .col-step, .prod-table thead .col-total, .prod-table thead .col-balance { z-index: 15; background-color: #020c18; color: var(--neon-yellow); }
 
         .date-col {
             width: var(--cell-width); min-width: var(--cell-width); max-width: var(--cell-width);
@@ -424,9 +430,12 @@
         const thead = document.getElementById('prodHead');
         const tbody = document.getElementById('prodBody');
         
+        let targetQty = Number(orderData.quantity || 0);
+
         let headHtml = `<tr>
-            <th class="col-step"></th>
-            <th class="col-total">รวม</th>`;
+            <th class="col-step">ขั้นตอน</th>
+            <th class="col-total">ทำได้</th>
+            <th class="col-balance">คงเหลือ</th>`;
             
         dateArray.forEach(dStr => {
             let parts = dStr.split('-');
@@ -440,7 +449,7 @@
         let sortedStepIds = Array.from(stepIds).sort(); 
 
         if (sortedStepIds.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="${2 + dateArray.length}">ไม่พบข้อมูลขั้นตอนของรหัสชิ้นงานนี้</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="${3 + dateArray.length}">ไม่พบข้อมูลขั้นตอนของรหัสชิ้นงานนี้</td></tr>`;
             return;
         }
 
@@ -462,9 +471,13 @@
                 }
             });
 
+            let remaining = targetQty - grandTotal;
+            let balanceStyle = remaining < 0 ? 'color: #ff4d4d;' : '';
+
             bodyHtml += `<tr>
                 <td class="col-step">${stepName}</td>
-                <td class="col-total val-cell">${grandTotal > 0 ? Number(grandTotal).toLocaleString() : ''}</td>`;
+                <td class="col-total val-cell">${grandTotal > 0 ? Number(grandTotal).toLocaleString() : ''}</td>
+                <td class="col-balance val-cell" style="${balanceStyle}">${Number(remaining).toLocaleString()}</td>`;
                 
             dateArray.forEach(dKey => {
                 let qty = dailySum[dKey] || 0;
