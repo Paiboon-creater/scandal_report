@@ -179,9 +179,20 @@
 <body>
 
     <div class="control-panel no-print">
-        <div class="row align-items-end">
+        <div class="row align-items-end g-2">
+            <!-- เพิ่มช่องค้นหารหัสชิ้นงาน -->
+            <div class="col-md-2">
+                <label class="form-label text-label mb-1" style="font-size: 0.8rem;">รหัสชิ้นงาน:</label>
+                <div class="input-group position-relative">
+                    <input type="text" id="input_work_code" class="form-select-neon form-control" 
+                           placeholder="ค้นหารหัส..." autocomplete="off"
+                           onkeyup="filterWorkCodeDropdown()" onfocus="filterWorkCodeDropdown()" onkeydown="handleWorkCodeEnter(event)">
+                    <div id="smart_dropdown_work" class="smart-dropdown-menu"></div>
+                </div>
+            </div>
+            
             <div class="col-md-3">
-                <label class="form-label text-label mb-1" style="font-size: 0.8rem;">ระบุหรือค้นหาเลขที่ใบสั่ง (Order No):</label>
+                <label class="form-label text-label mb-1" style="font-size: 0.8rem;">ระบุเลขที่ใบสั่ง (Order No):</label>
                 <div class="input-group position-relative">
                     <input type="text" id="input_order_no" class="form-select-neon form-control" 
                            placeholder="พิมพ์เลขใบสั่ง เช่น 139..." autocomplete="off"
@@ -191,16 +202,16 @@
                 </div>
             </div>
             
-            <div class="col-md-4">
-                <label class="form-label text-label mb-1" style="font-size: 0.8rem;">เลือกช่วงวันที่แสดงผล:</label>
+            <div class="col-md-3">
+                <label class="form-label text-label mb-1" style="font-size: 0.8rem;">ช่วงวันที่แสดงผล:</label>
                 <div class="input-group">
-                    <input type="date" id="input_start_date" class="form-select-neon form-control" onchange="searchOrderIfReady()">
-                    <span class="input-group-text input-group-text-neon">ถึง</span>
-                    <input type="date" id="input_end_date" class="form-select-neon form-control" onchange="searchOrderIfReady()">
+                    <input type="date" id="input_start_date" class="form-select-neon form-control px-2" onchange="searchOrderIfReady()">
+                    <span class="input-group-text input-group-text-neon px-2">-</span>
+                    <input type="date" id="input_end_date" class="form-select-neon form-control px-2" onchange="searchOrderIfReady()">
                 </div>
             </div>
             
-            <div class="col-md-5 text-end d-flex flex-column justify-content-end align-items-end gap-2">
+            <div class="col-md-4 text-end d-flex flex-column justify-content-end align-items-end gap-2">
                 <!-- โซนควบคุม Real-time และ Update -->
                 <div class="d-flex align-items-center gap-3">
                     <div class="form-check form-switch text-neon-green mb-0">
@@ -208,7 +219,7 @@
                         <label class="form-check-label" for="realtimeToggle" style="font-size: 0.8rem; cursor: pointer;">Real-time (อัปเดตทุก 10วิ)</label>
                     </div>
                     <button class="btn btn-neon btn-update" onclick="refreshDataOnly()">
-                        <i class="fa-solid fa-rotate"></i> ดึงข้อมูลล่าสุด
+                        <i class="fa-solid fa-rotate"></i> อัปเดตล่าสุด
                     </button>
                 </div>
                 
@@ -261,8 +272,14 @@
 
     let rawData = { orders: [], workItems: [], steps: [], targets: [], daily: [], orderSteps: [] };
     let maps = { workIdToCode: {}, stepIdToName: {}, targetIdToStepId: {}, workIdToStepIds: {} };
+    
+    // โครงสร้างข้อมูลใหม่เพื่อจัดการความสัมพันธ์
     let allOrderNumbers = [];
-    let realtimeTimer = null; // ตัวแปรเก็บ Timer ของระบบ Real-time
+    let allWorkCodes = [];
+    let orderToWorkCodeMap = {};
+    let workCodeToOrdersMap = {};
+
+    let realtimeTimer = null; 
     
     const STEP_ABBR_MAP = {
         "ตัดเหรียญมือ": "ตัดเหรียญมือ", "ตัดเหรียญออโต": "ตัดเหรียญออโต", "ตัดมุม": "ตัดมุม", 
@@ -277,7 +294,7 @@
     const MONTH_ABBR = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
 
     window.onload = async function() {
-        setDefaultDates(); // ตั้งค่าวันที่ -20 ถึง +2 วัน
+        setDefaultDates(); 
         
         showLoading(true);
         await fetchAllData();
@@ -292,15 +309,14 @@
         document.getElementById('lbl_print_date').innerText = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()} ${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
     }
 
-    // ฟังก์ชันสำหรับเซ็ตค่าเริ่มต้นของวันที่ 
     function setDefaultDates() {
         let today = new Date();
         
         let startDate = new Date();
-        startDate.setDate(today.getDate() - 20); // ลบ 20 วัน
+        startDate.setDate(today.getDate() - 20); 
         
         let endDate = new Date();
-        endDate.setDate(today.getDate() + 2); // บวก 2 วัน
+        endDate.setDate(today.getDate() + 2); 
 
         document.getElementById('input_start_date').value = startDate.toISOString().substring(0, 10);
         document.getElementById('input_end_date').value = endDate.toISOString().substring(0, 10);
@@ -323,17 +339,15 @@
         } catch (error) { console.error("Error:", error); }
     }
 
-    // ฟังก์ชันสำหรับดึงเฉพาะข้อมูลตารางยอดผลิต (Daily) เพื่ออัปเดตแบบไม่ต้องโหลดข้อมูลอื่นใหม่
     async function refreshDataOnly() {
         showLoading(true);
         try {
             const res = await fetch(`${SUPABASE_URL}/daily_production?select=*`, { headers });
             rawData.daily = await res.json();
             
-            // ถ้าระบุใบสั่งไว้แล้ว ให้อัปเดตตารางใหม่ด้วยข้อมูลล่าสุด
             if (document.getElementById('input_order_no').value.trim() !== "") {
                 searchOrder();
-                updatePrintDate(); // อัปเดตเวลาที่อัปเดตข้อมูลล่าสุดด้วย
+                updatePrintDate(); 
             }
         } catch (error) {
             console.error("Refresh Error:", error);
@@ -342,14 +356,11 @@
         }
     }
 
-    // ฟังก์ชันควบคุมการทำงานของ Real-time
     function toggleRealTime() {
         const isEnabled = document.getElementById('realtimeToggle').checked;
         if (isEnabled) {
-            // ตั้งเวลาให้โหลดข้อมูลใหม่ทุก 10 วินาที (10000 ms)
             realtimeTimer = setInterval(refreshDataOnly, 10000);
         } else {
-            // ยกเลิกการตั้งเวลาเมื่อปิดสวิตช์
             if (realtimeTimer) {
                 clearInterval(realtimeTimer);
                 realtimeTimer = null;
@@ -369,18 +380,100 @@
     }
 
     function setupOrderList() {
+        allOrderNumbers = [];
+        allWorkCodes = [];
+        orderToWorkCodeMap = {};
+        workCodeToOrdersMap = {};
+
         const validOrders = rawData.orders.filter(o => o.order_no && String(o.order_no).trim() !== "")
                                           .sort((a,b) => String(a.order_no).localeCompare(String(b.order_no), 'th', {numeric:true}));
-        allOrderNumbers = validOrders.map(o => String(o.order_no).trim());
+        
+        let wSet = new Set();
+        validOrders.forEach(o => {
+            let orderNo = String(o.order_no).trim();
+            let workCode = maps.workIdToCode[o.id_work] ? String(maps.workIdToCode[o.id_work]).trim() : 'ไม่ระบุ';
+            
+            allOrderNumbers.push(orderNo);
+            wSet.add(workCode);
+            
+            orderToWorkCodeMap[orderNo] = workCode;
+            
+            if(!workCodeToOrdersMap[workCode]) workCodeToOrdersMap[workCode] = [];
+            workCodeToOrdersMap[workCode].push(orderNo);
+        });
+        
+        allWorkCodes = Array.from(wSet).sort((a,b) => a.localeCompare(b, 'th', {numeric:true}));
     }
 
-    function filterSmartDropdown() {
-        const input = document.getElementById('input_order_no');
-        const dropdown = document.getElementById('smart_dropdown');
+    // ==========================================
+    // ระบบ Smart Dropdown - รหัสชิ้นงาน
+    // ==========================================
+    function filterWorkCodeDropdown() {
+        const input = document.getElementById('input_work_code');
+        const dropdown = document.getElementById('smart_dropdown_work');
         const filterText = input.value.toLowerCase().trim();
         
         dropdown.innerHTML = '';
-        const matchedOrders = allOrderNumbers.filter(order => order.toLowerCase().includes(filterText));
+        const matchedWorks = allWorkCodes.filter(wc => wc.toLowerCase().includes(filterText));
+        
+        if (matchedWorks.length === 0) {
+            dropdown.innerHTML = `<div class="smart-dropdown-item" style="color:var(--text-muted); cursor:default;">ไม่พบรหัสชิ้นงาน</div>`;
+        } else {
+            matchedWorks.slice(0, 50).forEach(wc => {
+                let displayHtml = wc;
+                if (filterText !== "") {
+                    const regex = new RegExp(`(${filterText})`, "gi");
+                    displayHtml = wc.replace(regex, `<span class="highlight-match">$1</span>`);
+                }
+                dropdown.innerHTML += `<div class="smart-dropdown-item" onclick="selectSmartWorkCode('${wc}')">${displayHtml}</div>`;
+            });
+        }
+        dropdown.style.display = 'block';
+    }
+
+    function selectSmartWorkCode(workCode) {
+        document.getElementById('input_work_code').value = workCode;
+        document.getElementById('smart_dropdown_work').style.display = 'none';
+        
+        // เคลียร์เลขใบสั่ง และดึง Focus เพื่อให้เลือกใบสั่งของรหัสงานนี้ต่อ
+        document.getElementById('input_order_no').value = "";
+        document.getElementById('input_order_no').focus();
+        filterSmartDropdown(); // เรียกกรองใบสั่งทันที
+    }
+
+    function handleWorkCodeEnter(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('smart_dropdown_work').style.display = 'none';
+            document.getElementById('input_order_no').focus();
+        }
+    }
+
+    // ==========================================
+    // ระบบ Smart Dropdown - เลขที่ใบสั่ง (อิงกับรหัสงาน)
+    // ==========================================
+    function filterSmartDropdown() {
+        const orderInput = document.getElementById('input_order_no');
+        const workInput = document.getElementById('input_work_code').value.trim().toLowerCase();
+        const dropdown = document.getElementById('smart_dropdown');
+        const filterText = orderInput.value.toLowerCase().trim();
+        
+        dropdown.innerHTML = '';
+        
+        let baseOrders = allOrderNumbers;
+        
+        // กรองหาเลขใบสั่งเฉพาะของรหัสชิ้นงานที่เลือกไว้ (ถ้ามีการพิมพ์รหัสชิ้นงาน)
+        if (workInput !== "") {
+            const matchedWorkCodes = allWorkCodes.filter(wc => wc.toLowerCase().includes(workInput));
+            let validOrdersForWork = [];
+            matchedWorkCodes.forEach(wc => {
+                if (workCodeToOrdersMap[wc]) {
+                    validOrdersForWork = validOrdersForWork.concat(workCodeToOrdersMap[wc]);
+                }
+            });
+            baseOrders = validOrdersForWork;
+        }
+
+        const matchedOrders = baseOrders.filter(order => order.toLowerCase().includes(filterText));
         
         if (matchedOrders.length === 0) {
             dropdown.innerHTML = `<div class="smart-dropdown-item" style="color:var(--text-muted); cursor:default;">ไม่พบใบสั่งที่ค้นหา</div>`;
@@ -391,25 +484,42 @@
                     const regex = new RegExp(`(${filterText})`, "gi");
                     displayHtml = order.replace(regex, `<span class="highlight-match">$1</span>`);
                 }
-                dropdown.innerHTML += `<div class="smart-dropdown-item" onclick="selectSmartOrder('${order}')">${displayHtml}</div>`;
+                
+                let wcHint = orderToWorkCodeMap[order] || '';
+                dropdown.innerHTML += `
+                    <div class="smart-dropdown-item d-flex justify-content-between align-items-center" onclick="selectSmartOrder('${order}')">
+                        <span>${displayHtml}</span>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">[${wcHint}]</span>
+                    </div>`;
             });
         }
         dropdown.style.display = 'block';
     }
 
     function selectSmartOrder(orderNo) {
-        const input = document.getElementById('input_order_no');
-        const dropdown = document.getElementById('smart_dropdown');
-        input.value = orderNo;
-        dropdown.style.display = 'none';
+        document.getElementById('input_order_no').value = orderNo;
+        document.getElementById('smart_dropdown').style.display = 'none';
+        
+        // เติมรหัสชิ้นงานให้อัตโนมัติ หากเลือกรหัสใบสั่ง
+        if(orderToWorkCodeMap[orderNo]) {
+            document.getElementById('input_work_code').value = orderToWorkCodeMap[orderNo];
+        }
+
         searchOrder(); 
     }
 
+    // จัดการคลิกปิด Dropdown
     document.addEventListener('click', function(event) {
-        const input = document.getElementById('input_order_no');
-        const dropdown = document.getElementById('smart_dropdown');
-        if (event.target !== input && event.target !== dropdown && !dropdown.contains(event.target)) {
-            dropdown.style.display = 'none';
+        const inputOrder = document.getElementById('input_order_no');
+        const dropdownOrder = document.getElementById('smart_dropdown');
+        const inputWork = document.getElementById('input_work_code');
+        const dropdownWork = document.getElementById('smart_dropdown_work');
+        
+        if (event.target !== inputOrder && event.target !== dropdownOrder && !dropdownOrder.contains(event.target)) {
+            dropdownOrder.style.display = 'none';
+        }
+        if (event.target !== inputWork && event.target !== dropdownWork && !dropdownWork.contains(event.target)) {
+            dropdownWork.style.display = 'none';
         }
     });
 
@@ -438,6 +548,12 @@
         if (!searchVal) return;
         
         document.getElementById('smart_dropdown').style.display = 'none';
+        
+        // เติมรหัสชิ้นงานด้วยเผื่อกรณีพิมพ์แล้วกด Enter ไม่ได้คลิกเลือก
+        if(orderToWorkCodeMap[searchVal]) {
+            document.getElementById('input_work_code').value = orderToWorkCodeMap[searchVal];
+        }
+
         showLoading(true);
         
         const orderData = rawData.orders.find(o => String(o.order_no).trim().toLowerCase() === searchVal.toLowerCase());
