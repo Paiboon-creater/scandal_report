@@ -20,6 +20,7 @@
             --neon-blue: #00aaff;
             --neon-yellow: #f5a623;
             --neon-green: #00ff88;
+            --neon-red: #ff3366;
             --input-bg: #0a1f3d;
             --input-text: #ffffff;
             --table-bg: #051428;
@@ -151,6 +152,9 @@
         
         .btn-home { background: rgba(0, 255, 136, 0.1); color: var(--neon-green); border-color: var(--neon-green); }
         .btn-home:hover { background: var(--neon-green); color: #000; }
+
+        .btn-clear { background: rgba(255, 51, 102, 0.1); color: var(--neon-red); border-color: var(--neon-red); }
+        .btn-clear:hover { background: var(--neon-red); color: #fff; }
         
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
         .input-group-text-neon { background: var(--input-bg); color: var(--text-muted); border: 1px solid var(--border-dim); }
@@ -180,7 +184,7 @@
 
     <div class="control-panel no-print">
         <div class="row align-items-end g-2">
-            <!-- เพิ่มช่องค้นหารหัสชิ้นงาน -->
+            <!-- ช่องค้นหารหัสชิ้นงาน -->
             <div class="col-md-2">
                 <label class="form-label text-label mb-1" style="font-size: 0.8rem;">รหัสชิ้นงาน:</label>
                 <div class="input-group position-relative">
@@ -191,6 +195,7 @@
                 </div>
             </div>
             
+            <!-- ช่องระบุเลขที่ใบสั่ง -->
             <div class="col-md-3">
                 <label class="form-label text-label mb-1" style="font-size: 0.8rem;">ระบุเลขที่ใบสั่ง (Order No):</label>
                 <div class="input-group position-relative">
@@ -202,28 +207,34 @@
                 </div>
             </div>
             
-            <div class="col-md-3">
+            <!-- ช่องช่วงวันที่แสดงผล และปุ่มล้างตัวกรอง -->
+            <div class="col-md-4">
                 <label class="form-label text-label mb-1" style="font-size: 0.8rem;">ช่วงวันที่แสดงผล:</label>
-                <div class="input-group">
-                    <input type="date" id="input_start_date" class="form-select-neon form-control px-2" onchange="searchOrderIfReady()">
-                    <span class="input-group-text input-group-text-neon px-2">-</span>
-                    <input type="date" id="input_end_date" class="form-select-neon form-control px-2" onchange="searchOrderIfReady()">
+                <div class="d-flex gap-2">
+                    <div class="input-group">
+                        <input type="date" id="input_start_date" class="form-select-neon form-control px-2" onchange="searchOrderIfReady()">
+                        <span class="input-group-text input-group-text-neon px-2">-</span>
+                        <input type="date" id="input_end_date" class="form-select-neon form-control px-2" onchange="searchOrderIfReady()">
+                    </div>
+                    <!-- ย้ายปุ่มล้างตัวกรองมาไว้ที่นี่ -->
+                    <button class="btn btn-neon btn-clear text-nowrap" onclick="clearFilters()" title="ล้างตัวกรอง">
+                        <i class="fa-solid fa-eraser"></i> ล้างตัวกรอง
+                    </button>
                 </div>
             </div>
             
-            <div class="col-md-4 text-end d-flex flex-column justify-content-end align-items-end gap-2">
-                <!-- โซนควบคุม Real-time และ Update -->
+            <!-- โซนปุ่มควบคุมการใช้งานทั่วไปทางขวา -->
+            <div class="col-md-3 text-end d-flex flex-column justify-content-end align-items-end gap-2">
                 <div class="d-flex align-items-center gap-3">
                     <div class="form-check form-switch text-neon-green mb-0">
                         <input class="form-check-input" type="checkbox" id="realtimeToggle" onchange="toggleRealTime()">
-                        <label class="form-check-label" for="realtimeToggle" style="font-size: 0.8rem; cursor: pointer;">Real-time (อัปเดตทุก 10วิ)</label>
+                        <label class="form-check-label" for="realtimeToggle" style="font-size: 0.8rem; cursor: pointer;">Real-time</label>
                     </div>
                     <button class="btn btn-neon btn-update" onclick="refreshDataOnly()">
                         <i class="fa-solid fa-rotate"></i> อัปเดตล่าสุด
                     </button>
                 </div>
                 
-                <!-- โซนปุ่มทั่วไป -->
                 <div class="d-flex align-items-center gap-2">
                     <div id="loadingStatus" class="d-inline-block text-neon-blue me-2" style="display: none !important;">
                         <i class="fa-solid fa-spinner fa-spin"></i>
@@ -320,6 +331,18 @@
 
         document.getElementById('input_start_date').value = startDate.toISOString().substring(0, 10);
         document.getElementById('input_end_date').value = endDate.toISOString().substring(0, 10);
+    }
+
+    // ฟังก์ชันล้างค่าตัวกรองทั้งหมด
+    function clearFilters() {
+        document.getElementById('input_work_code').value = "";
+        document.getElementById('input_order_no').value = "";
+        setDefaultDates();
+        
+        // ปิดการแสดงผลตาราง และ Dropdown
+        document.getElementById('reportArea').style.display = 'none';
+        document.getElementById('smart_dropdown').style.display = 'none';
+        document.getElementById('smart_dropdown_work').style.display = 'none';
     }
 
     async function fetchAllData() {
