@@ -350,7 +350,6 @@
                 `${SUPABASE_URL}/daily_production?select=*`,
                 `${SUPABASE_URL}/order_steps?select=*`
             ];
-            // เพิ่ม cache: 'no-store'
             const responses = await Promise.all(endpoints.map(url => fetch(url, { headers, cache: 'no-store' })));
             const data = await Promise.all(responses.map(res => res.json()));
             rawData = { orders: data[0], workItems: data[1], steps: data[2], targets: data[3], daily: data[4], orderSteps: data[5] || [] };
@@ -361,12 +360,9 @@
     async function refreshDataOnly() {
         showLoading(true);
         try {
-            // เพิ่ม cache: 'no-store'
-            const res = await fetch(`${SUPABASE_URL}/daily_production?select=*`, { headers, cache: 'no-store' });
-            rawData.daily = await res.json();
-            
             if (document.getElementById('input_order_no').value.trim() !== "") {
-                searchOrder();
+                // ให้ระบบรันฟังก์ชันค้นหาใหม่เลย เพื่อดึงข้อมูลล่าสุดของ Order นี้ ข้ามขีดจำกัด 1000 บรรทัด
+                await searchOrder();
                 updatePrintDate(); 
             }
         } catch (error) {
@@ -553,7 +549,7 @@
         return `${d} ${MONTH_ABBR[parseInt(m)-1]} ${parseInt(y)+543}`;
     }
 
-    function searchOrder() {
+    async function searchOrder() {
         const searchVal = document.getElementById('input_order_no').value.trim();
         if (!searchVal) return;
         
@@ -571,13 +567,23 @@
             document.getElementById('reportArea').style.display = 'none'; return;
         }
 
+        // 🌟 ดึงข้อมูลประวัติเฉพาะของ Order นี้จากฐานข้อมูลโดยตรง เพื่อข้ามข้อจำกัด 1,000 บรรทัดของ Supabase
+        let dailyForOrder = [];
+        try {
+            const res = await fetch(`${SUPABASE_URL}/daily_production?id_order=eq.${orderData.id_order}&select=*`, { 
+                headers: headers, 
+                cache: 'no-store' 
+            });
+            dailyForOrder = await res.json();
+        } catch (error) {
+            console.error("ดึงข้อมูลรายวันไม่สำเร็จ:", error);
+        }
+
         document.getElementById('lbl_order_no').innerText = orderData.order_no;
         document.getElementById('lbl_work_code').innerText = maps.workIdToCode[orderData.id_work] || 'ไม่ระบุ';
         document.getElementById('lbl_po_no').innerText = orderData.po_no || '-';
         document.getElementById('lbl_target').innerText = Number(orderData.quantity || 0).toLocaleString();
 
-        const dailyForOrder = rawData.daily.filter(d => d.id_order === orderData.id_order);
-        
         let startDateInput = document.getElementById('input_start_date');
         let endDateInput = document.getElementById('input_end_date');
         
