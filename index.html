@@ -153,6 +153,10 @@
         .btn-home { background: rgba(0, 255, 136, 0.1); color: var(--neon-green); border-color: var(--neon-green); }
         .btn-home:hover { background: var(--neon-green); color: #000; }
 
+        /* CSS ปุ่ม Status Report */
+        .btn-status { background: rgba(167, 139, 250, 0.1); color: #a78bfa; border-color: #a78bfa; }
+        .btn-status:hover { background: #a78bfa; color: #000; box-shadow: 0 0 10px rgba(167, 139, 250, 0.5); }
+
         .btn-clear { background: rgba(255, 51, 102, 0.1); color: var(--neon-red); border-color: var(--neon-red); }
         .btn-clear:hover { background: var(--neon-red); color: #fff; }
         
@@ -237,6 +241,12 @@
                     <div id="loadingStatus" class="d-inline-block text-neon-blue me-2" style="display: none !important;">
                         <i class="fa-solid fa-spinner fa-spin"></i>
                     </div>
+                    
+                    <!-- ปุ่ม Status Report เพิ่มใหม่ -->
+                    <a href="https://paiboon-creater.github.io/status_report/" class="btn btn-neon btn-status">
+                        <i class="fa-solid fa-clipboard-list"></i> Status Report
+                    </a>
+
                     <a href="https://paiboon-creater.github.io/Data_Information_Jaguar_productions/" class="btn btn-neon btn-home">
                         <i class="fa-solid fa-house"></i> Home
                     </a>
@@ -310,6 +320,15 @@
         
         updatePrintDate();
         showLoading(false);
+
+        // 🌟 เช็คว่ามีค่า order ส่งมากับ URL หรือไม่ (เพิ่มใหม่)
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderFromUrl = urlParams.get('order');
+
+        if (orderFromUrl) {
+            document.getElementById('input_order_no').value = orderFromUrl;
+            searchOrder();
+        }
     };
 
     function updatePrintDate() {
@@ -361,7 +380,6 @@
         showLoading(true);
         try {
             if (document.getElementById('input_order_no').value.trim() !== "") {
-                // ให้ระบบรันฟังก์ชันค้นหาใหม่เลย เพื่อดึงข้อมูลล่าสุดของ Order นี้ ข้ามขีดจำกัด 1000 บรรทัด
                 await searchOrder();
                 updatePrintDate(); 
             }
@@ -567,7 +585,6 @@
             document.getElementById('reportArea').style.display = 'none'; return;
         }
 
-        // 🌟 ดึงข้อมูลประวัติเฉพาะของ Order นี้จากฐานข้อมูลโดยตรง เพื่อข้ามข้อจำกัด 1,000 บรรทัดของ Supabase
         let dailyForOrder = [];
         try {
             const res = await fetch(`${SUPABASE_URL}/daily_production?id_order=eq.${orderData.id_order}&select=*`, { 
