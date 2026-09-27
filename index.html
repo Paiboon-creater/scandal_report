@@ -290,7 +290,8 @@
     };
 
     let rawData = { orders: [], workItems: [], steps: [], targets: [], daily: [], orderSteps: [] };
-    let maps = { workIdToCode: {}, stepIdToName: {}, targetIdToStepId: {}, workIdToStepIds: {} };
+    // เพิ่มการเก็บข้อมูล stepIdToLevel
+    let maps = { workIdToCode: {}, stepIdToName: {}, stepIdToLevel: {}, targetIdToStepId: {}, workIdToStepIds: {} };
     
     let allOrderNumbers = [];
     let allWorkCodes = [];
@@ -321,7 +322,6 @@
         updatePrintDate();
         showLoading(false);
 
-        // 🌟 เช็คว่ามีค่า order ส่งมากับ URL หรือไม่ (เพิ่มใหม่)
         const urlParams = new URLSearchParams(window.location.search);
         const orderFromUrl = urlParams.get('order');
 
@@ -404,7 +404,16 @@
 
     function buildMaps() {
         maps.workIdToCode = {}; rawData.workItems.forEach(w => maps.workIdToCode[w.id_work] = w.work_code);
-        maps.stepIdToName = {}; rawData.steps.forEach(s => maps.stepIdToName[s.id_step] = s.step_name);
+        
+        maps.stepIdToName = {}; 
+        maps.stepIdToLevel = {}; // เคลียร์และสร้าง object สำหรับเก็บ level
+        
+        rawData.steps.forEach(s => {
+            maps.stepIdToName[s.id_step] = s.step_name;
+            // ดึงค่า level มาเก็บไว้ (ถ้าไม่มีค่าให้เป็น 9999 เพื่อไปอยู่ท้ายสุด)
+            maps.stepIdToLevel[s.id_step] = parseInt(s.level) || 9999; 
+        });
+
         maps.targetIdToStepId = {}; maps.workIdToStepIds = {};
         rawData.targets.forEach(t => {
             maps.targetIdToStepId[t.id_target] = t.id_step;
@@ -674,7 +683,13 @@
 
         let bodyHtml = '';
         let stepIds = maps.workIdToStepIds[orderData.id_work] || new Set();
-        let sortedStepIds = Array.from(stepIds).sort(); 
+        
+        // การจัดเรียงใหม่: อิงตามข้อมูล level จากตาราง production_steps
+        let sortedStepIds = Array.from(stepIds).sort((a, b) => {
+            let levelA = maps.stepIdToLevel[a] || 9999;
+            let levelB = maps.stepIdToLevel[b] || 9999;
+            return levelA - levelB;
+        });
 
         if (sortedStepIds.length === 0) {
             tbody.innerHTML = `<tr><td colspan="${3 + dateArray.length}">ไม่พบข้อมูลขั้นตอนของรหัสชิ้นงานนี้</td></tr>`;
